@@ -29,6 +29,14 @@ inputs:
     description: 'Jq filter used to search for the image readme filepath'
     required: false
     default: ".target.default.labels[\"io.boxcutter.image.readme-filepath\"]"
+  run-lint-stage:
+    description: 'Run lint stage'
+    required: false
+    default: true
+  run-test-stage:
+    description: 'Run test stage'
+    required: false
+    default: true
     
 runs:
   using: 'composite'
@@ -36,6 +44,7 @@ runs:
     - uses: actions/checkout@v4
 
     - name: Check the Containerfile with hadolint
+      if: ${{ inputs.run-list-stage }}
       shell: bash
       working-directory: ${{ inputs.workdir }}
       run: |
@@ -50,22 +59,19 @@ runs:
 
     - name: Build locally for testing
       uses: docker/bake-action@v4
+      if: ${{ inputs.run-test-stage }}
       with:
         workdir: ${{ inputs.workdir }}
         targets: ${{ inputs.test-targets }}
         load: true
 
     - name: Run tests on the image with cinc-auditor
+      if: ${{ inputs.run-test-stage }}
       shell: bash
       working-directory: ${{ inputs.workdir }}
       run: |
         $(git rev-parse --show-toplevel)/bin/test.sh
 
-    - name: Debug
-      shell: bash
-      run: |
-        echo "github.event_name = ${{ github.event_name }}"
-        
     - name: Login to DockerHub
       if: ${{ github.event_name != 'pull_request' }}
       uses: docker/login-action@v3
