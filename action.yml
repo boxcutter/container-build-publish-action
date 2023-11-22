@@ -96,7 +96,7 @@ runs:
       working-directory: ${{ inputs.workdir }}
       run: |
         json_data="$(docker buildx bake --print 2>/dev/null)"
-        echo "image_name=$(echo "$json_data" | jq -r ${{ inputs.image-description-filter }})" >> $GITHUB_ENV
+        echo "image_description=$(echo "$json_data" | jq -r ${{ inputs.image-description-filter }})" >> $GITHUB_ENV
 
     - name: Get the image readme filepath
       if: ${{ github.event_name != 'pull_request' }}
