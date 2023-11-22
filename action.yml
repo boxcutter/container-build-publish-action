@@ -79,4 +79,4 @@ runs:
       run: |
         json_data="$(docker buildx bake --print 2>/dev/null)"
         echo ${{ inputs.image-name-filter }}
-        echo "image_name=$(echo "$json_data" | jq -r ${{ inputs.image-name-filter }}" >> $GITHUB_ENV
+        echo "image_name=$(echo "$json_data" | jq -r ${{ inputs.image-name-filter }})" >> $GITHUB_ENV
