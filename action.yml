@@ -112,7 +112,7 @@ runs:
         fi
 
     - name: Update Docker Hub Description
-      if: ${{ github.event_name != 'pull_request }}
+      if: ${{ github.event_name != 'pull_request' }}
       uses: peter-evans/dockerhub-description@v3
       with:
         username: ${{ inputs.dockerhub-username }}
