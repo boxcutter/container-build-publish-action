@@ -7,13 +7,11 @@ inputs:
     default: '.'
 runs:
   using: 'composite'
-  defaults:
-    run:
-      working-directory: ${{ inputs.workdir }}
   steps:
     - uses: actions/checkout@v4
 
     - name: Check the Containerfile with hadolint
       shell: bash
+      working-directory: ${{ inputs.workdir }}
       run: |
         $(git rev-parse --show-toplevel)/bin/lint.sh
