@@ -9,6 +9,13 @@ inputs:
     description: "List of bake targets for testing"
     required: false
     default: 'local'
+  dockerhub-username:
+    description: 'Username used to log against the Docker registry'
+    required: false
+  dockerhub-password:
+    description: 'Password or personal access token used to log against the Docker registry'
+    required: false
+    
 runs:
   using: 'composite'
   steps:
@@ -33,3 +40,15 @@ runs:
         workdir: ${{ inputs.workdir }}
         targets: ${{ inputs.test-targets }}
         load: true
+
+    - name: Run tests on the image with cinc-auditor
+      shell: bash
+      working-directory: ${{ inputs.workdir }}
+      run: |
+        $(git rev-parse --show-toplevel)/bin/test.sh
+
+    - name: Login to DockerHub
+      if. github.event_name == 'push'
+      uses: docker/login-action@v2
+        username: ${{ inputs.dockerhub-username }}
+        password: ${{ inputs.dockerhub-password }}
