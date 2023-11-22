@@ -1,5 +1,10 @@
 name: 'Container Build and Publish'
 description: 'GitHub Action with a pipeline to build, test and publish a container image'
+inputs:
+  workdir:
+    description: "Working directory of bake execution"
+    required: false
+    default: '.'
 runs:
   using: 'composite'
   steps:
@@ -19,7 +24,7 @@ runs:
     - name: Build locally for testing
         uses: docker/bake-action@v4
         with:
-          workdir: ${{ matrix.image }}
+          workdir: ${{ inputs.workdir }}
           targets: local
           load: true
 
