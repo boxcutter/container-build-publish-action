@@ -105,8 +105,18 @@ runs:
       working-directory: ${{ inputs.workdir }}
       run: |
         json_data="$(docker buildx bake --print 2>/dev/null)"
-        if echo "$json_data" | jq -e ${{ inputs.image-readme-filepath-filter }} > /dev/null;
+        if echo "$json_data" | jq -e ${{ inputs.image-readme-filepath-filter }} > /dev/null; then
           echo "image_readme_filepath=$(echo "$json_data" | jq -r ${{ inputs.image-readme-filepath-filter }})" >> $GITHUB_ENV
         else
           echo "image_readme_filepath=${{ inputs.workdir }}/README.md" >> $GITHUB_ENV
         fi
+
+    - name: Update Docker Hub Description
+      if: ${{ github.event_name != 'pull_request }}
+      uses: peter-evans/dockerhub-description@v3
+      with:
+        username: ${{ inputs.dockerhub-username }}
+        password: ${{ inputs.dockerhub-password }}
+        repository: boxcutter:/${{ env.image_name }}
+        short-description: ${{ env.image_description }}
+        readme-filepath: ${{ env.image_readme_filepath }}
