@@ -9,3 +9,7 @@ runs:
   using: 'composite'
   steps:
     - uses: actions/checkout@v4
+
+    - name: Check the Containerfile with hadolint
+        run: |
+          $(git rev-parse --show-toplevel)/bin/lint.sh
