@@ -37,6 +37,14 @@ inputs:
     description: 'Run test stage'
     required: false
     default: true
+  test-image:
+    description: 'Test image'
+    requires: false
+    default: ''
+  test-entrypoint:
+    description: 'Test entrypoint'
+    requires: false
+    default: '/bin/bash'
     
 runs:
   using: 'composite'
@@ -70,7 +78,16 @@ runs:
       shell: bash
       working-directory: ${{ inputs.workdir }}
       run: |
-        $(git rev-parse --show-toplevel)/bin/test.sh
+        test_image=${{ inputs.test-image }}
+        if [ -z "${{ inputs.test-image }}" ]; then
+          json_data="$(docker buildx bake local --print 2>/dev/null)"
+          if echo "$json_data" | jq -e '.group.local.targets' > /dev/null; then
+            test_image=$(echo "$json_data" | jq -r '.target."local-default".tags | first')
+          else
+            test_image=$(echo "$json_data" | jq -r '.target.local.tags | first')
+          fi
+        fi  
+        $(git rev-parse --show-toplevel)/bin/test.sh $test_image ${{ inputs.test-entrypoint }}
 
     - name: Login to DockerHub
       if: ${{ github.event_name != 'pull_request' }}
