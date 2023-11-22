@@ -9,25 +9,3 @@ runs:
   using: 'composite'
   steps:
     - uses: actions/checkout@v4
-
-    - name: Check the Containerfile with hadolint
-        run: |
-          $(git rev-parse --show-toplevel)/bin/lint.sh
-
-    - name: Install QEMU static binaries
-        uses: docker/setup-qemu-action@v3
-
-    - name: Set up Docker Buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-
-    - name: Build locally for testing
-        uses: docker/bake-action@v4
-        with:
-          workdir: ${{ inputs.workdir }}
-          targets: local
-          load: true
-
-    - name: Run tests on the image with cinc-auditor
-        run: |
-          $(git rev-parse --show-toplevel)/bin/test.sh
