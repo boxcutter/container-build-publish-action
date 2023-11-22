@@ -109,6 +109,6 @@ runs:
           readme_filepath=$(echo "$json_data" | jq -r '${{ inputs.image-readme-filepath-filter }}')
           echo "image_readme_filepath=$readme_filepath" >> $GITHUB_ENV
         else
-          echo "image_readme_filepath=${{ inputs.workdir }}/README.md" >> $GITHHUB_ENV
+          echo "image_readme_filepath=${{ inputs.workdir }}/README.md" >> $GITHUB_ENV
         fi
         
