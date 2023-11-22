@@ -112,3 +112,13 @@ runs:
           echo "image_readme_filepath=${{ inputs.workdir }}/README.md" >> $GITHUB_ENV
         fi
         
+    - name: Update Docker Hub Description
+      if: ${{ github.event_name != 'pull_request' }}
+      uses: peter-evans/dockerhub-description@v3
+      with:
+        username: ${{ inputs.dockerhub-username }}
+        password: ${{ inputs.dockerhub-password }}
+        repository: boxcutter/${{ env.image_name }}
+        short-description: ${{ env.image_description }}
+        readme-filepath: ${{ env.image_readme_filepath }}
+        
