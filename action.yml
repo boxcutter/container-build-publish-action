@@ -50,6 +50,7 @@ runs:
         $(git rev-parse --show-toplevel)/bin/test.sh
 
     - name: Login to dockerhub
+      if: ${{ github.event_name == 'push' }}
       uses: docker/login-action@v3
       with:
         username: ${{ inputs.dockerhub-username }}
