@@ -11,5 +11,5 @@ runs:
     - uses: actions/checkout@v4
 
     - name: Check the Containerfile with hadolint
-        run: |
-          $(git rev-parse --show-toplevel)/bin/lint.sh
+      run: |
+        $(git rev-parse --show-toplevel)/bin/lint.sh
