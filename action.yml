@@ -24,11 +24,11 @@ inputs:
   image-description-filter:
     description: 'Jq filter used to search for the image description'
     required: false
-    default: '.target.default.labels."org.opencontainers.image.description"'
+    default: ".target.default.labels.\"org.opencontainers.image.description\""
   image-readme-filepath-filter:
     description: 'Jq filter used to search for the image readme filepath'
     required: false
-    default: '.target.default.labels["io.boxcutter.image.readme-filepath"]'
+    default: ".target.default.labels[\"io.boxcutter.image.readme-filepath\"]"
     
 runs:
   using: 'composite'
@@ -88,3 +88,12 @@ runs:
         json_data="$(docker buildx bake --print 2>/dev/null)"
         echo ${{ inputs.image-name-filter }}
         echo "image_name=$(echo "$json_data" | jq -r "${{ inputs.image-name-filter }}")" >> $GITHUB_ENV
+
+    - name: Get the image description
+      if: ${{ github.event_name != 'pull_request' }}
+      id: image_description
+      shell: bash
+      working-directory: ${{ inputs.workdir }}
+      run: |
+        json_data="$(docker buildx bake --print 2>/dev/null)"
+        echo "image_description=$(echo "$json_data" | jq -r "${{ inputs.image-description-filter }}")" >> $GITHUB_ENV
