@@ -87,7 +87,7 @@ runs:
       run: |
         json_data="$(docker buildx bake --print 2>/dev/null)"
         echo ${{ inputs.image-name-filter }}
-        echo "image_name=$(echo "$json_data" | jq -r "${{ inputs.image-name-filter }}")" >> $GITHUB_ENV
+        echo "image_name=$(echo "$json_data" | jq -r '${{ inputs.image-name-filter }}')" >> $GITHUB_ENV
 
     - name: Get the image description
       if: ${{ github.event_name != 'pull_request' }}
@@ -96,4 +96,4 @@ runs:
       working-directory: ${{ inputs.workdir }}
       run: |
         json_data="$(docker buildx bake --print 2>/dev/null)"
-        echo "image_description=$(echo "$json_data" | jq -r "${{ inputs.image-description-filter }}")" >> $GITHUB_ENV
+        echo "image_description=$(echo "$json_data" | jq -r '${{ inputs.image-description-filter }}')" >> $GITHUB_ENV
