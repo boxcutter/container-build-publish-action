@@ -5,6 +5,10 @@ inputs:
     description: "Working directory of bake execution"
     required: false
     default: '.'
+  test-targets:
+    description: "List of bake targets for testing"
+    required: false
+    default: 'local'
 runs:
   using: 'composite'
   steps:
@@ -15,3 +19,17 @@ runs:
       working-directory: ${{ inputs.workdir }}
       run: |
         $(git rev-parse --show-toplevel)/bin/lint.sh
+
+    - name: Install QEMU static binaries
+      uses: docker/setup-qemu-action@v3
+      
+    - name: Set up Docker Buildx
+      id: buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Build locally for testing
+      uses: docker/bake-action@v4
+      with:
+        workdir: ${{ inputs.workdir }}
+        targets: ${{ inputs.test-targets }}
+        load: true
