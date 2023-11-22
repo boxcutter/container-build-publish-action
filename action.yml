@@ -18,7 +18,7 @@ inputs:
     required: false
     default: ''
   image-name-filter:
-    description: 'Fi
+    description: 'Jq filter used to search for image name'
     required: false
     default: '.target.default.labels."org.opencontainers.image.title"'
     
