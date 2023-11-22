@@ -17,6 +17,10 @@ inputs:
     description: 'Password or personal access token used to log against the Docker registry'
     required: false
     default: ''
+  image-name-filter:
+    description: 'Fi
+    required: false
+    default: '.target.default.labels."org.opencontainers.image.title"'
     
 runs:
   using: 'composite'
@@ -55,6 +59,7 @@ runs:
         echo "github.event_name = ${{ github.event_name }}"
         
     - name: Login to DockerHub
+      if: ${{ github.event_name != 'pull_request' }}
       uses: docker/login-action@v3
       with:
         username: ${{ inputs.dockerhub-username }}
@@ -64,4 +69,14 @@ runs:
       uses: docker/bake-action@v4
       with:
         workdir: ${{ inputs.workdir }}
-        push: true
+        push: ${{ github.event_name != 'pull_request' }}
+
+    - name: Get the image name
+      if: ${{ github.event_name != 'pull_request' }}
+      id: image_name
+      shell: bash
+      working-directory: ${{ inputs.workdir }}
+      run: |
+        json_data="$(docker buildx bake --print 2>/dev/null)"
+        echo ${{ inputs.image-name-filter }}
+        echo "image_name=$(echo "$json_data" | jq -r ${{ inputs.image-name-filter }}" >> $GITHUB_ENV
