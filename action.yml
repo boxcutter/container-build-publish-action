@@ -25,7 +25,7 @@ inputs:
     description: 'Jq filter used to search for the image description'
     required: false
     default: '.target.default.labels."org.opencontainers.image.description"'
-  image-readme-filepath:
+  image-readme-filepath-filter:
     description: 'Jq filter used to search for the image readme filepath'
     required: false
     default: '.target.default.labels["io.boxcutter.image.readme-filepath"]'
@@ -105,4 +105,8 @@ runs:
       working-directory: ${{ inputs.workdir }}
       run: |
         json_data="$(docker buildx bake --print 2>/dev/null)"
-        echo "image_readme_filepath=$(echo "$json_data" | jq -r ${{ inputs.image-readme-filepath }})" >> $GITHUB_ENV
+        if echo "$json_data" | jq -e ${{ inputs.image-readme-filepath-filter }} > /dev/null;
+          echo "image_readme_filepath=$(echo "$json_data" | jq -r ${{ inputs.image-readme-filepath-filter }})" >> $GITHUB_ENV
+        else
+          echo "image_readme_filepath=${{ inputs.workdir }}/README.md" >> $GITHUB_ENV
+        fi
