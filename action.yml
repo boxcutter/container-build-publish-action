@@ -28,7 +28,7 @@ inputs:
   image-readme-filepath-filter:
     description: 'Jq filter used to search for the image readme filepath'
     required: false
-    default: ".target.default.labels[\"io.boxcutter.image.readme-filepath\"]"
+    default: ".target.default.labels[\"dev.boxcutter.image.readme-filepath\"]"
   run-lint-stage:
     description: 'Run lint stage'
     required: false
