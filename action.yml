@@ -69,7 +69,7 @@ runs:
         json_data="$(docker buildx bake local --print 2>/dev/null)"
         test_image=${{ inputs.test-image }}
         if [ -z "${{ inputs.test-image }}" ]; then
-          test_image=$(echo "$json_data" | jq -r '.target[] | .tags[0]' | head -n 1)
+          test_image=$(echo "$json_data" | jq -r '.target | to_entries[0].value | .tags[0]')
         fi  
         $(git rev-parse --show-toplevel)/bin/test.sh $test_image ${{ inputs.test-entrypoint }}
 
