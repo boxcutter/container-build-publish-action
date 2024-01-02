@@ -17,18 +17,6 @@ inputs:
     description: 'Password or personal access token used to log against the Docker registry'
     required: false
     default: ''
-  image-name-filter:
-    description: 'Jq filter used to search for the image name'
-    required: false
-    default: ".target.default.labels.\"org.opencontainers.image.title\""
-  image-description-filter:
-    description: 'Jq filter used to search for the image description'
-    required: false
-    default: ".target.default.labels.\"org.opencontainers.image.description\""
-  image-readme-filepath-filter:
-    description: 'Jq filter used to search for the image readme filepath'
-    required: false
-    default: ".target.default.labels[\"dev.boxcutter.image.readme-filepath\"]"
   run-lint-stage:
     description: 'Run lint stage'
     required: false
@@ -104,9 +92,8 @@ runs:
       shell: bash
       working-directory: ${{ inputs.workdir }}
       run: |
-        json_data="$(docker buildx bake --print 2>/dev/null)"
-        echo ${{ inputs.image-name-filter }}
-        echo "image_name=$(echo "$json_data" | jq -r '${{ inputs.image-name-filter }}')" >> $GITHUB_ENV
+        echo "image_name=$($(git rev-parse --show-toplevel)/bin/image-name.sh)
+" >> $GITHUB_ENV
 
     - name: Get the image description
       if: ${{ github.event_name != 'pull_request' }}
@@ -114,8 +101,8 @@ runs:
       shell: bash
       working-directory: ${{ inputs.workdir }}
       run: |
-        json_data="$(docker buildx bake --print 2>/dev/null)"
-        echo "image_description=$(echo "$json_data" | jq -r '${{ inputs.image-description-filter }}')" >> $GITHUB_ENV
+        echo "image_description=$($(git rev-parse --show-toplevel)/bin/image-d
+escription.sh)" >> $GITHUB_ENV
 
     - name: Get the image readme filepath
       if: ${{ github.event_name != 'pull_request' }}
@@ -123,13 +110,7 @@ runs:
       shell: bash
       working-directory: ${{ inputs.workdir }}
       run: |
-        json_data="$(docker buildx bake --print 2>/dev/null)"
-        if echo "$json_data" | jq -e '${{ inputs.image-readme-filepath-filter }}' > /dev/null; then
-          readme_filepath=$(echo "$json_data" | jq -r '${{ inputs.image-readme-filepath-filter }}')
-          echo "image_readme_filepath=$readme_filepath" >> $GITHUB_ENV
-        else
-          echo "image_readme_filepath=${{ inputs.workdir }}/README.md" >> $GITHUB_ENV
-        fi
+        echo "readme_filepath=$($(git rev-parse --show-toplevel)/bin/image-readme.sh)" >> $GITHUB_ENV
         
     - name: Update Docker Hub Description
       if: ${{ github.event_name != 'pull_request' }}
