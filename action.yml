@@ -78,6 +78,7 @@ runs:
       shell: bash
       working-directory: ${{ inputs.workdir }}
       run: |
+        json_data="$(docker buildx bake local --print 2>/dev/null)"
         test_image=${{ inputs.test-image }}
         if [ -z "${{ inputs.test-image }}" ]; then
           test_image=$(echo "$json_data" | jq -r '.target[] | .tags[0]' | head -n 1)
