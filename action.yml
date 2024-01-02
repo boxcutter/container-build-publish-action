@@ -80,12 +80,7 @@ runs:
       run: |
         test_image=${{ inputs.test-image }}
         if [ -z "${{ inputs.test-image }}" ]; then
-          json_data="$(docker buildx bake local --print 2>/dev/null)"
-          if echo "$json_data" | jq -e '.group.local.targets' > /dev/null; then
-            test_image=$(echo "$json_data" | jq -r '.target."local-default".tags | first')
-          else
-            test_image=$(echo "$json_data" | jq -r '.target.local.tags | first')
-          fi
+          test_image=$(echo "$json_data" | jq -r '.target[] | .tags[0]' | head -n 1)
         fi  
         $(git rev-parse --show-toplevel)/bin/test.sh $test_image ${{ inputs.test-entrypoint }}
 
