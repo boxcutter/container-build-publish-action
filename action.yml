@@ -92,8 +92,7 @@ runs:
       shell: bash
       working-directory: ${{ inputs.workdir }}
       run: |
-        echo "image_name=$($(git rev-parse --show-toplevel)/bin/image-name.sh)
-" >> $GITHUB_ENV
+        echo "image_name=$($(git rev-parse --show-toplevel)/bin/image-name.sh)" >> $GITHUB_ENV
 
     - name: Get the image description
       if: ${{ github.event_name != 'pull_request' }}
@@ -101,8 +100,7 @@ runs:
       shell: bash
       working-directory: ${{ inputs.workdir }}
       run: |
-        echo "image_description=$($(git rev-parse --show-toplevel)/bin/image-d
-escription.sh)" >> $GITHUB_ENV
+        echo "image_description=$($(git rev-parse --show-toplevel)/bin/image-description.sh)" >> $GITHUB_ENV
 
     - name: Get the image readme filepath
       if: ${{ github.event_name != 'pull_request' }}
