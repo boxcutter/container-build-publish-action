@@ -39,8 +39,14 @@ runs:
   steps:
     - uses: actions/checkout@v4
 
+    - name: Get run-lint-stage
+      shell: bash
+      working-directory: ${{ matrix.image }}
+      run: |
+        echo "run-lint-stage=$($(git rev-parse --show-toplevel)/bin/run-lint-stage.sh)" >> $GITHUB_ENV
+
     - name: Check the Containerfile with hadolint
-      if: ${{ inputs.run-list-stage }}
+      if: ${{ inputs.run-lint-stage }}
       shell: bash
       working-directory: ${{ inputs.workdir }}
       run: |
