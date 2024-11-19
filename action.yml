@@ -46,7 +46,7 @@ runs:
         echo "run-lint-stage=$($(git rev-parse --show-toplevel)/bin/run-lint-stage.sh)" >> $GITHUB_ENV
 
     - name: Check the Containerfile with hadolint
-      if: ${{ inputs.run-lint-stage }}
+      if: ${{ env.run-lint-stage }}
       shell: bash
       working-directory: ${{ inputs.workdir }}
       run: |
