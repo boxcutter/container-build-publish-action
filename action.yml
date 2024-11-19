@@ -46,7 +46,7 @@ runs:
         echo "run-lint-stage=$($(git rev-parse --show-toplevel)/bin/run-lint-stage.sh)" >> $GITHUB_ENV
 
     - name: Check the Containerfile with hadolint
-      if: ${{ env.run-lint-stage }}
+      if: env.run-lint-stage == 'true' 
       shell: bash
       working-directory: ${{ inputs.workdir }}
       run: |
@@ -67,7 +67,7 @@ runs:
 
     - name: Build locally for testing
       uses: docker/bake-action@v4
-      if: ${{ env.run-test-stage }}
+      if: env.run-test-stage == 'true'
       with:
         workdir: ${{ inputs.workdir }}
         targets: ${{ inputs.test-targets }}
