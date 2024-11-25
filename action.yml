@@ -33,47 +33,52 @@ inputs:
     description: 'Test entrypoint'
     requires: false
     default: '/bin/bash'
-    
+  build-type:
+    description: 'Build type'
+    requires: false
+    default: 'hosted'
+
 runs:
   using: 'composite'
   steps:
-    - uses: actions/checkout@v4
+    # - uses: actions/checkout@v4
 
-    - name: Get run-lint-stage
-      shell: bash
-      working-directory: ${{ matrix.image }}
-      run: |
-        echo "run-lint-stage=$($(git rev-parse --show-toplevel)/bin/run-lint-stage.sh)" >> $GITHUB_ENV
+    # - name: Get run-lint-stage
+    #   shell: bash
+    #   working-directory: ${{ matrix.image }}
+    #   run: |
+    #     echo "run-lint-stage=$($(git rev-parse --show-toplevel)/bin/run-lint-stage.sh)" >> $GITHUB_ENV
 
     - name: Check the Containerfile with hadolint
-      if: env.run-lint-stage == 'true' 
+      if: ${{ inputs.run-list-stage == 'true' }}
       shell: bash
       working-directory: ${{ inputs.workdir }}
       run: |
         $(git rev-parse --show-toplevel)/bin/lint.sh
 
     - name: Install QEMU static binaries
+      if: ${{ inputs.build-type == 'hosted' }}
       uses: docker/setup-qemu-action@v3
       
     - name: Set up Docker Buildx
-      id: buildx
+      if: ${{ inputs.build-type == 'hosted' }}
       uses: docker/setup-buildx-action@v3
 
-    - name: Get run-test-stage
-      shell: bash
-      working-directory: ${{ matrix.image }}
-      run: |
-        echo "run-test-stage=$($(git rev-parse --show-toplevel)/bin/run-test-stage.sh)" >> $GITHUB_ENV
+    # - name: Get run-test-stage
+    #   shell: bash
+    #   working-directory: ${{ matrix.image }}
+    #   run: |
+    #     echo "run-test-stage=$($(git rev-parse --show-toplevel)/bin/run-test-stage.sh)" >> $GITHUB_ENV
 
-    - name: Get test-entrypoint
-      shell: bash
-      working-directory: ${{ matrix.image }}
-      run: |
-        echo "test-entrypoint=$($(git rev-parse --show-toplevel)/bin/test-entrypoint.sh)" >> $GITHUB_ENV
+    # - name: Get test-entrypoint
+    #   shell: bash
+    #   working-directory: ${{ matrix.image }}
+    #   run: |
+    #     echo "test-entrypoint=$($(git rev-parse --show-toplevel)/bin/test-entrypoint.sh)" >> $GITHUB_ENV
 
     - name: Build locally for testing
       uses: docker/bake-action@v4
-      if: env.run-test-stage == 'true'
+      if:  ${{ inputs.run-test-stage }}
       with:
         workdir: ${{ inputs.workdir }}
         targets: ${{ inputs.test-targets }}
