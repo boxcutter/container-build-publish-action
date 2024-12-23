@@ -64,6 +64,8 @@ runs:
       if: ${{ inputs.build-type == 'hosted' }}
       uses: docker/setup-buildx-action@v3
       with:
+          version: v0.17.1
+          driver-opts: image=moby/buildkit:v0.17.2
           driver: docker-container
           endpoint: ssh://github-runner@10.0.1.175
           platforms: linux/arm64
