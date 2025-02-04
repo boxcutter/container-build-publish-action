@@ -77,9 +77,10 @@ runs:
     #     echo "test-entrypoint=$($(git rev-parse --show-toplevel)/bin/test-entrypoint.sh)" >> $GITHUB_ENV
 
     - name: Build locally for testing
-      uses: docker/bake-action@v5
+      uses: docker/bake-action@v6
       if:  ${{ inputs.run-test-stage }}
       with:
+        source: .
         workdir: ${{ inputs.workdir }}
         targets: ${{ inputs.test-targets }}
         load: true
