@@ -41,14 +41,6 @@ inputs:
 runs:
   using: 'composite'
   steps:
-    # - uses: actions/checkout@v4
-
-    # - name: Get run-lint-stage
-    #   shell: bash
-    #   working-directory: ${{ matrix.image }}
-    #   run: |
-    #     echo "run-lint-stage=$($(git rev-parse --show-toplevel)/bin/run-lint-stage.sh)" >> $GITHUB_ENV
-
     - name: Check the Containerfile with hadolint
       if: ${{ inputs.run-list-stage == 'true' }}
       shell: bash
@@ -63,18 +55,6 @@ runs:
     - name: Set up Docker Buildx
       if: ${{ inputs.build-type == 'hosted' }}
       uses: docker/setup-buildx-action@v3
-
-    # - name: Get run-test-stage
-    #   shell: bash
-    #   working-directory: ${{ matrix.image }}
-    #   run: |
-    #     echo "run-test-stage=$($(git rev-parse --show-toplevel)/bin/run-test-stage.sh)" >> $GITHUB_ENV
-
-    # - name: Get test-entrypoint
-    #   shell: bash
-    #   working-directory: ${{ matrix.image }}
-    #   run: |
-    #     echo "test-entrypoint=$($(git rev-parse --show-toplevel)/bin/test-entrypoint.sh)" >> $GITHUB_ENV
 
     - name: Build locally for testing
       uses: docker/bake-action@v6
@@ -138,7 +118,7 @@ runs:
         
     - name: Update Docker Hub Description
       if: ${{ github.event_name != 'pull_request' }}
-      uses: peter-evans/dockerhub-description@v4
+      uses: peter-evans/dockerhub-description@v5
       with:
         username: ${{ inputs.dockerhub-username }}
         password: ${{ inputs.dockerhub-password }}
