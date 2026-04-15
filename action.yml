@@ -60,8 +60,7 @@ runs:
       uses: docker/bake-action@v7
       if:  ${{ inputs.run-test-stage }}
       with:
-        source: .
-        workdir: ${{ inputs.workdir }}
+        source: ./${{ inputs.workdir }}
         targets: ${{ inputs.test-targets }}
         load: true
 
