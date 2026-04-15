@@ -50,14 +50,14 @@ runs:
 
     - name: Install QEMU static binaries
       if: ${{ inputs.build-type == 'hosted' }}
-      uses: docker/setup-qemu-action@v3
+      uses: docker/setup-qemu-action@v4
       
     - name: Set up Docker Buildx
       if: ${{ inputs.build-type == 'hosted' }}
-      uses: docker/setup-buildx-action@v3
+      uses: docker/setup-buildx-action@v4
 
     - name: Build locally for testing
-      uses: docker/bake-action@v6
+      uses: docker/bake-action@v7
       if:  ${{ inputs.run-test-stage }}
       with:
         source: .
@@ -80,13 +80,13 @@ runs:
 
     - name: Login to DockerHub
       if: ${{ github.event_name != 'pull_request' }}
-      uses: docker/login-action@v3
+      uses: docker/login-action@v4
       with:
         username: ${{ inputs.dockerhub-username }}
         password: ${{ inputs.dockerhub-password }}
 
     - name: Build and push
-      uses: docker/bake-action@v6
+      uses: docker/bake-action@v7
       with:
         source: .
         workdir: ${{ inputs.workdir }}
