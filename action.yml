@@ -87,8 +87,7 @@ runs:
     - name: Build and push
       uses: docker/bake-action@v7
       with:
-        source: .
-        workdir: ${{ inputs.workdir }}
+        source: ./${{ inputs.workdir }}
         push: ${{ github.event_name != 'pull_request' }}
 
     - name: Get the image name
