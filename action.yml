@@ -27,15 +27,15 @@ inputs:
     default: true
   test-image:
     description: 'Test image'
-    requires: false
+    required: false
     default: ''
   test-entrypoint:
     description: 'Test entrypoint'
-    requires: false
+    required: false
     default: '/bin/bash'
   build-type:
     description: 'Build type'
-    requires: false
+    required: false
     default: 'hosted'
   platform:
     description: 'Build only this platform (e.g. linux/arm64) natively and push it by digest for the merge action to tag. Builds every platform under QEMU when empty.'
@@ -85,7 +85,7 @@ runs:
         } >> "$GITHUB_OUTPUT"
 
     - name: Check the Containerfile with hadolint
-      if: ${{ inputs.run-list-stage == 'true' }}
+      if: ${{ inputs.run-lint-stage == 'true' && steps.platform.outputs.skip != 'true' }}
       shell: bash
       working-directory: ${{ inputs.workdir }}
       run: |
@@ -101,14 +101,14 @@ runs:
 
     - name: Build locally for testing
       uses: docker/bake-action@v7
-      if:  ${{ inputs.run-test-stage && steps.platform.outputs.skip != 'true' }}
+      if: ${{ inputs.run-test-stage == 'true' && steps.platform.outputs.skip != 'true' }}
       with:
         source: ./${{ inputs.workdir }}
         targets: ${{ inputs.test-targets }}
         load: true
 
     - name: Run tests on the image with cinc-auditor
-      if: ${{ inputs.run-test-stage && steps.platform.outputs.skip != 'true' }}
+      if: ${{ inputs.run-test-stage == 'true' && steps.platform.outputs.skip != 'true' }}
       shell: bash
       working-directory: ${{ inputs.workdir }}
       run: |
@@ -117,8 +117,8 @@ runs:
         if [ -z "${{ inputs.test-image }}" ]; then
           test_image=$(echo "$json_data" | jq -r '.target | to_entries[0].value | .tags[0]')
         fi
-        echo "Executing: $(git rev-parse --show-toplevel)/bin/test-matrix.sh $test_image ${{ env.test-entrypoint }}"
-        $(git rev-parse --show-toplevel)/bin/test-matrix.sh $test_image ${{ env.test-entrypoint }}
+        echo "Executing: $(git rev-parse --show-toplevel)/bin/test-matrix.sh $test_image ${{ inputs.test-entrypoint }}"
+        $(git rev-parse --show-toplevel)/bin/test-matrix.sh $test_image ${{ inputs.test-entrypoint }}
 
     - name: Login to DockerHub
       if: ${{ github.event_name != 'pull_request' && steps.platform.outputs.skip != 'true' }}
