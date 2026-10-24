@@ -37,10 +37,53 @@ inputs:
     description: 'Build type'
     requires: false
     default: 'hosted'
+  platform:
+    description: 'Build only this platform (e.g. linux/arm64) natively and push it by digest for the merge action to tag. Builds every platform under QEMU when empty.'
+    required: false
+    default: ''
 
 runs:
   using: 'composite'
   steps:
+    - name: Resolve the targets to build for this platform
+      id: platform
+      if: ${{ inputs.platform != '' }}
+      shell: bash
+      working-directory: ${{ inputs.workdir }}
+      env:
+        PLATFORM: ${{ inputs.platform }}
+        PUSH: ${{ github.event_name != 'pull_request' }}
+        WORKDIR: ${{ inputs.workdir }}
+      run: |
+        # Only build the default targets that list this platform, untagged and
+        # pushed by digest. The merge action tags the per-platform digests.
+        targets="$(docker buildx bake default --print 2>/dev/null | jq -c --arg platform "$PLATFORM" '
+          [.target | to_entries[]
+            | {
+                name: .key,
+                repo: (.value.tags[0] | sub(":[^:/]*$"; "")),
+                platform: ([.value.platforms[]? | select(. == $platform or startswith($platform + "/"))][0])
+              }
+            | select(.platform != null)]')"
+        echo "$targets" | jq .
+        if [ "$(echo "$targets" | jq length)" -eq 0 ]; then
+          echo "No targets build for ${PLATFORM}, skipping"
+          echo "skip=true" >> "$GITHUB_OUTPUT"
+          exit 0
+        fi
+        workdir="${WORKDIR#./}"
+        {
+          echo "skip=false"
+          echo "targets=$(echo "$targets" | jq -r 'map(.name) | join(",")')"
+          echo "artifact=digests-${workdir//\//-}__${PLATFORM//\//-}"
+          echo "set<<EOF"
+          echo "$targets" | jq -r --arg push "$PUSH" '.[]
+            | "\(.name).platform=\(.platform)",
+              "\(.name).tags=",
+              "\(.name).output=type=image,\"name=\(.repo)\",push-by-digest=true,name-canonical=true,push=\($push)"'
+          echo "EOF"
+        } >> "$GITHUB_OUTPUT"
+
     - name: Check the Containerfile with hadolint
       if: ${{ inputs.run-list-stage == 'true' }}
       shell: bash
@@ -49,7 +92,7 @@ runs:
         $(git rev-parse --show-toplevel)/bin/lint.sh
 
     - name: Install QEMU static binaries
-      if: ${{ inputs.build-type == 'hosted' }}
+      if: ${{ inputs.build-type == 'hosted' && inputs.platform == '' }}
       uses: docker/setup-qemu-action@v4
       
     - name: Set up Docker Buildx
@@ -58,14 +101,14 @@ runs:
 
     - name: Build locally for testing
       uses: docker/bake-action@v7
-      if:  ${{ inputs.run-test-stage }}
+      if:  ${{ inputs.run-test-stage && steps.platform.outputs.skip != 'true' }}
       with:
         source: ./${{ inputs.workdir }}
         targets: ${{ inputs.test-targets }}
         load: true
 
     - name: Run tests on the image with cinc-auditor
-      if: ${{ inputs.run-test-stage }}
+      if: ${{ inputs.run-test-stage && steps.platform.outputs.skip != 'true' }}
       shell: bash
       working-directory: ${{ inputs.workdir }}
       run: |
@@ -78,20 +121,54 @@ runs:
         $(git rev-parse --show-toplevel)/bin/test-matrix.sh $test_image ${{ env.test-entrypoint }}
 
     - name: Login to DockerHub
-      if: ${{ github.event_name != 'pull_request' }}
+      if: ${{ github.event_name != 'pull_request' && steps.platform.outputs.skip != 'true' }}
       uses: docker/login-action@v4
       with:
         username: ${{ inputs.dockerhub-username }}
         password: ${{ inputs.dockerhub-password }}
 
     - name: Build and push
+      if: ${{ inputs.platform == '' }}
       uses: docker/bake-action@v7
       with:
         source: ./${{ inputs.workdir }}
         push: ${{ github.event_name != 'pull_request' }}
 
+    - name: Build and push by digest
+      id: bake-by-digest
+      if: ${{ inputs.platform != '' && steps.platform.outputs.skip != 'true' }}
+      uses: docker/bake-action@v7
+      with:
+        source: ./${{ inputs.workdir }}
+        targets: ${{ steps.platform.outputs.targets }}
+        set: ${{ steps.platform.outputs.set }}
+
+    - name: Export the digests
+      if: ${{ inputs.platform != '' && steps.platform.outputs.skip != 'true' && github.event_name != 'pull_request' }}
+      shell: bash
+      env:
+        METADATA: ${{ steps.bake-by-digest.outputs.metadata }}
+        ARTIFACT: ${{ steps.platform.outputs.artifact }}
+      run: |
+        mkdir -p "${RUNNER_TEMP}/digests"
+        # {"<target>": "sha256:..."}
+        echo "$METADATA" | jq '
+          with_entries(select(.value | type == "object" and has("containerimage.digest"))
+            | .value |= .["containerimage.digest"])' \
+          | tee "${RUNNER_TEMP}/digests/${ARTIFACT}.json"
+
+    - name: Upload the digests
+      if: ${{ inputs.platform != '' && steps.platform.outputs.skip != 'true' && github.event_name != 'pull_request' }}
+      uses: actions/upload-artifact@v7
+      with:
+        name: ${{ steps.platform.outputs.artifact }}
+        path: ${{ runner.temp }}/digests/${{ steps.platform.outputs.artifact }}.json
+        if-no-files-found: error
+        retention-days: 1
+        overwrite: true
+
     - name: Get the image name
-      if: ${{ github.event_name != 'pull_request' }}
+      if: ${{ github.event_name != 'pull_request' && inputs.platform == '' }}
       id: image_name
       shell: bash
       working-directory: ${{ inputs.workdir }}
@@ -99,7 +176,7 @@ runs:
         echo "image_name=$($(git rev-parse --show-toplevel)/bin/image-name.sh)" >> $GITHUB_ENV
 
     - name: Get the image description
-      if: ${{ github.event_name != 'pull_request' }}
+      if: ${{ github.event_name != 'pull_request' && inputs.platform == '' }}
       id: image_description
       shell: bash
       working-directory: ${{ inputs.workdir }}
@@ -107,7 +184,7 @@ runs:
         echo "image_description=$($(git rev-parse --show-toplevel)/bin/image-description.sh)" >> $GITHUB_ENV
 
     - name: Get the image readme filepath
-      if: ${{ github.event_name != 'pull_request' }}
+      if: ${{ github.event_name != 'pull_request' && inputs.platform == '' }}
       id: image_readme_filepath
       shell: bash
       working-directory: ${{ inputs.workdir }}
@@ -115,7 +192,7 @@ runs:
         echo "image_readme_filepath=$($(git rev-parse --show-toplevel)/bin/image-readme.sh)" >> $GITHUB_ENV
         
     - name: Update Docker Hub Description
-      if: ${{ github.event_name != 'pull_request' }}
+      if: ${{ github.event_name != 'pull_request' && inputs.platform == '' }}
       uses: peter-evans/dockerhub-description@v5
       with:
         username: ${{ inputs.dockerhub-username }}
